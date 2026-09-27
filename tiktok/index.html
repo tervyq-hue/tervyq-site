@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Share to TikTok — TERVYQ</title>
+<meta name="description" content="Connect TikTok, preview a video, choose TikTok posting settings, and share with explicit creator approval.">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+.share-shell{max-width:940px;margin:0 auto}.share-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:22px;margin-top:28px}
+.panel{background:linear-gradient(180deg,rgba(18,28,49,.96),rgba(13,20,36,.96));border:1px solid var(--line);border-radius:18px;padding:22px}
+.panel h2{font-size:1.35rem}.muted{color:var(--muted)}.hidden{display:none!important}
+.account{display:flex;align-items:center;gap:14px}.avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#111b2f;border:1px solid var(--line)}
+.field{margin-top:18px}.field label,.field legend{display:block;font-weight:750;margin-bottom:7px}.field input[type=file],.field input[type=text],.field textarea,.field select{width:100%;background:#091120;color:#fff;border:1px solid #304362;border-radius:11px;padding:11px 12px;font:inherit}
+.field textarea{min-height:108px;resize:vertical}.checks{display:grid;gap:9px}.check{display:flex;gap:9px;align-items:flex-start;color:#d3daea}
+.check input{margin-top:5px}.subpanel{border:1px solid var(--line);background:#0a1221;border-radius:12px;padding:14px;margin-top:12px}
+video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{margin-top:16px;padding:12px;border-radius:10px;background:#091120;border:1px solid var(--line);white-space:pre-wrap}
+.status.good{border-color:#238d68}.status.bad{border-color:#b74d64}.status.busy{border-color:#8b5cf6}
+.progress{height:10px;background:#091120;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin-top:12px}.progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .2s}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.actions button{cursor:pointer}.actions button:disabled{opacity:.45;cursor:not-allowed}
+.note{font-size:.9rem;color:#bdc8da}.danger{color:#ff9bb1}.creator-meta{font-size:.9rem;color:var(--muted)}
+@media(max-width:820px){.share-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><nav>
+<a class="brand" href="../"><span class="brandmark" aria-hidden="true">T</span><span>TERVYQ</span></a>
+<div class="navlinks">
+<a href="../about/">About</a><a href="../how-it-works/">How it works</a>
+<a href="../tiktok/">Share to TikTok</a><a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../contact/">Contact</a>
+</div>
+</nav></div></header>
+
+<main class="page"><div class="wrap share-shell">
+<div class="eyebrow">Creator tools</div>
+<h1>Share to TikTok</h1>
+<p class="lead">Connect your own TikTok account, select a video you are authorized to share, preview it, choose the posting settings returned by TikTok, and approve the post before anything is sent.</p>
+
+<div id="connectPanel" class="panel">
+<h2>Connect your TikTok account</h2>
+<p class="muted">TikTok authorization is required before TERVYQ can read creator posting options or publish on your behalf.</p>
+<div class="actions"><a class="button primary" id="connectButton" href="https://mtpzhrtvedliwxozvhhr.supabase.co/functions/v1/tervyq-tiktok-oauth/start?mode=creator">Connect TikTok</a></div>
+<p class="note">TERVYQ does not receive your TikTok password. Authorization can be revoked through TikTok.</p>
+</div>
+
+<div id="workspace" class="hidden">
+<div class="panel account">
+<img id="avatar" class="avatar" alt="" src="">
+<div><strong id="nickname">TikTok creator</strong><div id="username" class="creator-meta"></div><div id="environment" class="creator-meta"></div></div>
+<div style="margin-left:auto"><button id="disconnect" class="button" type="button">End session</button></div>
+</div>
+
+<div class="share-grid">
+<section class="panel">
+<h2>1. Select and preview</h2>
+<div class="field">
+<label for="videoFile">Video file</label>
+<input id="videoFile" type="file" accept="video/mp4,video/quicktime,video/webm">
+<p class="note">The exact file you select is sent. TERVYQ does not add a logo, watermark, promotional text, or other overlay.</p>
+</div>
+<div id="previewWrap" class="field hidden">
+<video id="preview" controls playsinline></video>
+<div id="videoMeta" class="creator-meta"></div>
+</div>
+<div class="field">
+<label for="title">Caption</label>
+<textarea id="title" maxlength="2200" placeholder="Write your TikTok caption, hashtags, and mentions."></textarea>
+<div id="titleCount" class="creator-meta">0 / 2200</div>
+</div>
+<div class="field">
+<label><input id="aigc" type="checkbox"> This video contains AI-generated content</label>
+</div>
+</section>
+
+<section class="panel">
+<h2>2. Choose TikTok settings</h2>
+<div class="field">
+<label for="privacy">Who can view this post?</label>
+<select id="privacy">
+<option value="" selected disabled>Select privacy</option>
+</select>
+<p class="note">There is no default privacy choice. Options come directly from the connected TikTok account.</p>
+</div>
+
+<fieldset class="field" style="border:0;padding:0">
+<legend>Interactions</legend>
+<div class="checks">
+<label class="check"><input id="allowComment" type="checkbox"> Allow comments</label>
+<label class="check"><input id="allowDuet" type="checkbox"> Allow Duet</label>
+<label class="check"><input id="allowStitch" type="checkbox"> Allow Stitch</label>
+</div>
+<p class="note">All interaction options start off. TikTok account restrictions are respected and unavailable options are disabled.</p>
+</fieldset>
+
+<div class="field subpanel">
+<label class="check"><input id="commercial" type="checkbox"> This content promotes a brand, product, service, or business</label>
+<div id="commercialChoices" class="checks hidden" style="margin-top:12px">
+<label class="check"><input id="yourBrand" type="checkbox"> Your brand — promoting yourself or your own business</label>
+<label class="check"><input id="brandedContent" type="checkbox"> Branded content — promoting another brand or a third party</label>
+<div id="commercialLabel" class="note"></div>
+</div>
+</div>
+
+<div class="field subpanel">
+<label class="check"><input id="rightsConfirm" type="checkbox"> I confirm I own this video or have the rights and authorization required to post it.</label>
+<label class="check"><input id="musicConfirm" type="checkbox"> By posting, you agree to TikTok's Music Usage Confirmation.</label>
+<label class="check"><input id="consent" type="checkbox"> I explicitly approve sending this selected video and these settings to my connected TikTok account.</label>
+<div id="brandedDeclaration" class="note hidden">By posting branded content, you also agree to TikTok's Branded Content Policy.</div>
+</div>
+
+<div id="validation" class="status hidden"></div>
+<div class="progress hidden" id="progress"><span id="progressBar"></span></div>
+<div class="actions">
+<button id="publish" class="button primary" type="button" disabled>Post to TikTok</button>
+</div>
+</section>
+</div>
+
+<div id="result" class="status hidden"></div>
+</div>
+
+<div class="notice" style="margin-top:28px">
+<strong>Privacy and control.</strong> TERVYQ queries the latest creator information before posting and requires your selections and explicit consent. See the <a href="../privacy/">Privacy Policy</a> and <a href="../terms/">Terms of Service</a>.
+</div>
+</div></main>
+
+<footer><div class="wrap footergrid"><div>© 2026 TERVYQ. Independent AI & technology media.</div>
+<div class="smalllinks"><a href="../privacy/">Privacy</a><a href="../terms/">Terms</a><a href="../contact/">Contact</a></div></div></footer>
+
+<script>
+(() => {
+  const API = "https://mtpzhrtvedliwxozvhhr.supabase.co/functions/v1/tervyq-tiktok-creator";
+  const SESSION_KEY = "tervyq_tiktok_creator_session";
+  let session = "";
+  let creator = null;
+  let file = null;
+  let durationSec = 0;
+  let previewUrl = "";
+
+  const $ = (id) => document.getElementById(id);
+  const connectPanel = $("connectPanel");
+  const workspace = $("workspace");
+  const videoFile = $("videoFile");
+  const preview = $("preview");
+  const previewWrap = $("previewWrap");
+  const videoMeta = $("videoMeta");
+  const title = $("title");
+  const titleCount = $("titleCount");
+  const privacy = $("privacy");
+  const allowComment = $("allowComment");
+  const allowDuet = $("allowDuet");
+  const allowStitch = $("allowStitch");
+  const commercial = $("commercial");
+  const commercialChoices = $("commercialChoices");
+  const yourBrand = $("yourBrand");
+  const brandedContent = $("brandedContent");
+  const commercialLabel = $("commercialLabel");
+  const brandedDeclaration = $("brandedDeclaration");
+  const rightsConfirm = $("rightsConfirm");
+  const musicConfirm = $("musicConfirm");
+  const consent = $("consent");
+  const aigc = $("aigc");
+  const validation = $("validation");
+  const publish = $("publish");
+  const progress = $("progress");
+  const progressBar = $("progressBar");
+  const result = $("result");
+
+  function ingestSessionFromHash() {
+    const raw = location.hash.startsWith("#") ? location.hash.slice(1) : "";
+    const params = new URLSearchParams(raw);
+    const token = params.get("session");
+    if (token) {
+      sessionStorage.setItem(SESSION_KEY, token);
+      history.replaceState(null, "", location.pathname + location.search);
+    }
+    session = sessionStorage.getItem(SESSION_KEY) || "";
+  }
+
+  function statusBox(node, message, kind) {
+    node.textContent = message;
+    node.classList.remove("hidden", "good", "bad", "busy");
+    if (kind) node.classList.add(kind);
+  }
+
+  async function api(action, body) {
+    const response = await fetch(API + "?action=" + encodeURIComponent(action), {
+      method: body ? "POST" : "GET",
+      headers: {
+        "Authorization": "Bearer " + session,
+        ...(body ? {"Content-Type":"application/json"} : {})
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.ok === false) {
+      throw new Error(payload.error || ("HTTP " + response.status));
+    }
+    return payload;
+  }
+
+  function privacyLabel(value) {
+    return ({
+      PUBLIC_TO_EVERYONE: "Everyone",
+      MUTUAL_FOLLOW_FRIENDS: "Friends",
+      FOLLOWER_OF_CREATOR: "Followers",
+      SELF_ONLY: "Only me"
+    })[value] || value;
+  }
+
+  function renderCreator(data) {
+    creator = data;
+    $("nickname").textContent = data.creator_nickname || "TikTok creator";
+    $("username").textContent = data.creator_username ? ("@" + data.creator_username) : "Connected TikTok account";
+    $("environment").textContent = data.environment === "sandbox"
+      ? "Sandbox connection — unaudited posts are limited by TikTok to private visibility."
+      : "TikTok connection active.";
+
+    if (data.creator_avatar_url) {
+      $("avatar").src = data.creator_avatar_url;
+      $("avatar").alt = data.creator_nickname || "TikTok creator";
+    } else {
+      $("avatar").removeAttribute("src");
+    }
+
+    privacy.innerHTML = '<option value="" selected disabled>Select privacy</option>';
+    (data.privacy_level_options || []).forEach((value) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = privacyLabel(value);
+      privacy.appendChild(option);
+    });
+
+    allowComment.checked = false;
+    allowDuet.checked = false;
+    allowStitch.checked = false;
+    allowComment.disabled = !!data.comment_disabled;
+    allowDuet.disabled = !!data.duet_disabled;
+    allowStitch.disabled = !!data.stitch_disabled;
+
+    connectPanel.classList.add("hidden");
+    workspace.classList.remove("hidden");
+    validate();
+  }
+
+  function validate() {
+    const errors = [];
+    if (!file) errors.push("Select a video file.");
+    if (!durationSec) errors.push("Wait for the video preview metadata to load.");
+    if (creator && creator.max_video_post_duration_sec && durationSec > creator.max_video_post_duration_sec + 0.25) {
+      errors.push("This video exceeds the connected creator's maximum TikTok duration.");
+    }
+    if (!privacy.value) errors.push("Select a privacy setting.");
+    if (commercial.checked && !yourBrand.checked && !brandedContent.checked) {
+      errors.push("Choose Your brand, Branded content, or both.");
+    }
+    if (brandedContent.checked && privacy.value === "SELF_ONLY") {
+      errors.push("Branded content cannot use Only me visibility.");
+    }
+    if (!rightsConfirm.checked) errors.push("Confirm your rights to the video.");
+    if (!musicConfirm.checked) errors.push("Accept TikTok's Music Usage Confirmation.");
+    if (!consent.checked) errors.push("Give explicit approval to send this post to TikTok.");
+
+    commercialChoices.classList.toggle("hidden", !commercial.checked);
+    brandedDeclaration.classList.toggle("hidden", !(commercial.checked && brandedContent.checked));
+    commercialLabel.textContent = !commercial.checked ? "" :
+      brandedContent.checked ? "TikTok will label this as Paid partnership." :
+      yourBrand.checked ? "TikTok will label this as Promotional content." : "";
+
+    if (errors.length) {
+      statusBox(validation, errors.join("\n"), "bad");
+      publish.disabled = true;
+    } else {
+      validation.classList.add("hidden");
+      publish.disabled = false;
+    }
+  }
+
+  videoFile.addEventListener("change", () => {
+    file = videoFile.files && videoFile.files[0] ? videoFile.files[0] : null;
+    durationSec = 0;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = "";
+    previewWrap.classList.add("hidden");
+
+    if (file) {
+      const allowed = ["video/mp4", "video/quicktime", "video/webm"];
+      if (!allowed.includes(file.type)) {
+        statusBox(validation, "Use MP4, MOV/QuickTime, or WebM.", "bad");
+        file = null;
+        publish.disabled = true;
+        return;
+      }
+      previewUrl = URL.createObjectURL(file);
+      preview.src = previewUrl;
+      previewWrap.classList.remove("hidden");
+    }
+    validate();
+  });
+
+  preview.addEventListener("loadedmetadata", () => {
+    durationSec = Number.isFinite(preview.duration) ? preview.duration : 0;
+    if (file) {
+      videoMeta.textContent = (file.name || "Selected video") + " • " +
+        (file.size / 1024 / 1024).toFixed(2) + " MB • " +
+        durationSec.toFixed(1) + " sec";
+    }
+    validate();
+  });
+
+  title.addEventListener("input", () => {
+    titleCount.textContent = title.value.length + " / 2200";
+  });
+
+  [privacy,allowComment,allowDuet,allowStitch,commercial,yourBrand,brandedContent,
+   rightsConfirm,musicConfirm,consent,aigc].forEach((el) => el.addEventListener("change", validate));
+
+  $("disconnect").addEventListener("click", () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    location.reload();
+  });
+
+  async function uploadToTikTok(uploadUrl, chunkSize) {
+    if (!file) throw new Error("VIDEO_MISSING");
+    let offset = 0;
+    progress.classList.remove("hidden");
+    progressBar.style.width = "0%";
+
+    while (offset < file.size) {
+      const remaining = file.size - offset;
+      const normalEnd = Math.min(file.size, offset + chunkSize);
+      let end = normalEnd;
+
+      if (file.size > 64 * 1024 * 1024 && file.size - normalEnd < 5 * 1024 * 1024) {
+        end = file.size;
+      }
+
+      const blob = file.slice(offset, end, file.type);
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+          "Content-Range": "bytes " + offset + "-" + (end - 1) + "/" + file.size
+        },
+        body: blob
+      });
+
+      if (![201,206].includes(response.status)) {
+        throw new Error("TikTok upload failed with HTTP " + response.status);
+      }
+
+      offset = end;
+      progressBar.style.width = Math.round((offset / file.size) * 100) + "%";
+    }
+  }
+
+  async function pollStatus(postToken) {
+    for (let attempt = 1; attempt <= 45; attempt += 1) {
+      const data = await api("status", {post_token: postToken});
+      const state = String(data.status || "").toUpperCase();
+      statusBox(result, "TikTok status: " + (state || "PROCESSING"), "busy");
+
+      if (state === "PUBLISH_COMPLETE") {
+        const suffix = data.public_post_id ? ("\nPost ID: " + data.public_post_id) :
+          "\nTikTok completed the post. Sandbox/unaudited posts may not expose a public post ID.";
+        statusBox(result, "Publish complete." + suffix, "good");
+        return;
+      }
+      if (state === "FAILED") {
+        throw new Error("TikTok rejected the post: " + (data.fail_reason || "unknown reason"));
+      }
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+    }
+    statusBox(result, "The upload finished and TikTok is still processing it. Check again shortly.", "busy");
+  }
+
+  publish.addEventListener("click", async () => {
+    validate();
+    if (publish.disabled || !file) return;
+
+    publish.disabled = true;
+    statusBox(result, "Checking the latest TikTok creator settings…", "busy");
+
+    try {
+      const initialized = await api("init", {
+        title: title.value,
+        privacy_level: privacy.value,
+        allow_comment: allowComment.checked,
+        allow_duet: allowDuet.checked,
+        allow_stitch: allowStitch.checked,
+        commercial_content: commercial.checked,
+        brand_organic: yourBrand.checked,
+        branded_content: brandedContent.checked,
+        is_aigc: aigc.checked,
+        music_usage_confirmation: musicConfirm.checked,
+        consent: consent.checked,
+        video_size: file.size,
+        duration_sec: durationSec
+      });
+
+      statusBox(result, "TikTok accepted the post settings. Uploading the selected video…", "busy");
+      await uploadToTikTok(initialized.upload_url, initialized.chunk_size);
+      statusBox(result, "Upload complete. Waiting for TikTok processing…", "busy");
+      await pollStatus(initialized.post_token);
+    } catch (error) {
+      statusBox(result, error instanceof Error ? error.message : String(error), "bad");
+    } finally {
+      validate();
+    }
+  });
+
+  async function boot() {
+    ingestSessionFromHash();
+    if (!session) return;
+    try {
+      const payload = await api("creator");
+      renderCreator(payload.creator);
+    } catch (error) {
+      sessionStorage.removeItem(SESSION_KEY);
+      statusBox(connectPanel, "TikTok session expired or could not be loaded. Please connect again.\n" +
+        (error instanceof Error ? error.message : String(error)), "bad");
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
