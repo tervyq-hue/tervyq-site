@@ -187,7 +187,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     const response = await fetch(API + "?action=" + encodeURIComponent(action), {
       method: body ? "POST" : "GET",
       headers: {
-        "Authorization": "Bearer " + session,
+        "X-TERVYQ-SESSION": session,
         ...(body ? {"Content-Type":"application/json"} : {})
       },
       body: body ? JSON.stringify(body) : undefined
