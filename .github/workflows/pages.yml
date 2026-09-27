@@ -8,6 +8,7 @@ on:
       - "**.html"
       - "assets/**"
       - "robots.txt"
+      - "*.txt"
       - ".nojekyll"
       - ".github/workflows/pages.yml"
 
