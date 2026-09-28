@@ -1,12 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t">
-<title id="t">TERVYQ</title>
-<defs>
-<linearGradient id="g" x1="28" y1="25" x2="225" y2="232" gradientUnits="userSpaceOnUse">
-<stop offset="0" stop-color="#31d7f1"/><stop offset=".46" stop-color="#746af2"/><stop offset="1" stop-color="#df45ad"/>
-</linearGradient>
-<filter id="s" x="-18%" y="-18%" width="136%" height="136%"><feDropShadow dx="0" dy="1" stdDeviation="8" flood-color="#00121e" flood-opacity=".75"/></filter>
-<filter id="ts" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#6158b7" flood-opacity=".6"/></filter>
-</defs>
-<rect x="21" y="21" width="214" height="214" rx="47" fill="url(#g)" filter="url(#s)"/>
-<text x="128" y="166" text-anchor="middle" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-size="99" font-weight="900" filter="url(#ts)">T</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <image href="tervyq-icon.webp?v=20260928g" x="0" y="0" width="256" height="256" preserveAspectRatio="xMidYMid meet"/>
 </svg>
