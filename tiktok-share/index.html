@@ -441,6 +441,9 @@ TikTok will send an inbox notification when the draft is ready. Open that notifi
 
   function validateDraft() {
     const errors = [];
+    if (creator && !creator.draft_upload_authorized) {
+      errors.push("Reconnect TikTok to authorize video.upload before using draft upload.");
+    }
     if (!file) errors.push("Select a video file in step 1.");
     if (!durationSec) errors.push("Wait for the selected video's metadata to load.");
     if (file && file.size > 4 * 1024 * 1024 * 1024) {
