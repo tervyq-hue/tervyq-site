@@ -24,6 +24,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
 .scope-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.scope-chip{font-size:.78rem;font-weight:800;color:#dfe7f7;border:1px solid #304362;background:#091120;border-radius:999px;padding:5px 9px}
 .metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}.metric{background:#091120;border:1px solid var(--line);border-radius:12px;padding:13px}.metric strong{display:block;font-size:1.25rem;color:#fff}.metric span{font-size:.82rem;color:var(--muted)}
 .video-section-title{margin-top:22px;font-weight:800}.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.video-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#091120}.video-card img{width:100%;aspect-ratio:9/16;max-height:220px;object-fit:cover;background:#05070c}.video-card-body{padding:12px}.video-card-title{font-weight:750;color:#fff;line-height:1.35}.video-card-meta{font-size:.78rem;color:var(--muted);margin-top:7px}.video-card a{display:inline-block;margin-top:8px;font-size:.82rem;font-weight:750}
+.draft-panel{margin-top:22px}.draft-callout{border-left:4px solid var(--violet);background:#091120;border-radius:10px;padding:14px 16px;margin-top:14px}.draft-callout strong{display:block;color:#fff;margin-bottom:4px}
 @media(max-width:820px){.share-grid{grid-template-columns:1fr}.metric-grid{grid-template-columns:repeat(2,1fr)}.video-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -151,6 +152,34 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
 </div>
 
 <div id="result" class="status hidden"></div>
+
+<section class="panel draft-panel" aria-labelledby="draftTitle">
+<div class="display-head">
+<div>
+<h2 id="draftTitle">3. Upload to TikTok as draft</h2>
+<p class="muted" style="margin-bottom:0">Send the exact selected video to your TikTok inbox for further editing and final posting inside TikTok.</p>
+<div class="scope-row"><span class="scope-chip">video.upload</span></div>
+</div>
+</div>
+
+<div class="draft-callout">
+<strong>Complete the post in TikTok.</strong>
+TikTok will send an inbox notification when the draft is ready. Open that notification in the TikTok app to continue editing and publish the video.
+</div>
+
+<div class="field subpanel">
+<label class="check"><input id="draftRightsConfirm" type="checkbox"> I confirm I own the selected video or have the rights and authorization required to send it to TikTok.</label>
+<label class="check"><input id="draftConsent" type="checkbox"> I explicitly approve uploading this exact selected video to my TikTok account as a draft.</label>
+</div>
+
+<div id="draftValidation" class="status hidden"></div>
+<div class="progress hidden" id="draftProgress"><span id="draftProgressBar"></span></div>
+<div class="actions">
+<button id="draftUpload" class="button" type="button" disabled>Upload draft to TikTok</button>
+</div>
+<div id="draftResult" class="status hidden"></div>
+<p class="note">Draft upload does not publish immediately. Caption, privacy, effects, music and final publishing choices are completed in TikTok.</p>
+</section>
 </div>
 
 <div class="notice" style="margin-top:28px">
@@ -216,6 +245,13 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
   const metricFollowing = $("metricFollowing");
   const metricLikes = $("metricLikes");
   const metricVideos = $("metricVideos");
+  const draftRightsConfirm = $("draftRightsConfirm");
+  const draftConsent = $("draftConsent");
+  const draftValidation = $("draftValidation");
+  const draftUpload = $("draftUpload");
+  const draftProgress = $("draftProgress");
+  const draftProgressBar = $("draftProgressBar");
+  const draftResult = $("draftResult");
 
   function ingestSessionFromHash() {
     const raw = location.hash.startsWith("#") ? location.hash.slice(1) : "";
@@ -403,6 +439,32 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     }
   }
 
+  function validateDraft() {
+    const errors = [];
+    if (!file) errors.push("Select a video file in step 1.");
+    if (!durationSec) errors.push("Wait for the selected video's metadata to load.");
+    if (file && file.size > 4 * 1024 * 1024 * 1024) {
+      errors.push("TikTok draft uploads cannot exceed 4 GB.");
+    }
+    if (durationSec > 600.25) {
+      errors.push("TikTok draft uploads cannot exceed 10 minutes.");
+    }
+    if (!draftRightsConfirm.checked) {
+      errors.push("Confirm your rights to the selected video.");
+    }
+    if (!draftConsent.checked) {
+      errors.push("Give explicit approval to upload the selected video as a TikTok draft.");
+    }
+
+    if (errors.length) {
+      statusBox(draftValidation, errors.join("\n"), "bad");
+      draftUpload.disabled = true;
+    } else {
+      draftValidation.classList.add("hidden");
+      draftUpload.disabled = false;
+    }
+  }
+
   function validate() {
     const errors = [];
     if (!file) errors.push("Select a video file.");
@@ -456,6 +518,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
       previewWrap.classList.remove("hidden");
     }
     validate();
+    validateDraft();
   });
 
   preview.addEventListener("loadedmetadata", () => {
@@ -466,6 +529,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
         durationSec.toFixed(1) + " sec";
     }
     validate();
+    validateDraft();
   });
 
   title.addEventListener("input", () => {
@@ -474,6 +538,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
 
   [privacy,allowComment,allowDuet,allowStitch,commercial,yourBrand,brandedContent,
    rightsConfirm,musicConfirm,consent,aigc].forEach((el) => el.addEventListener("change", validate));
+  [draftRightsConfirm,draftConsent].forEach((el) => el.addEventListener("change", validateDraft));
 
   $("disconnect").addEventListener("click", () => {
     sessionStorage.removeItem(SESSION_KEY);
@@ -516,6 +581,76 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     }
   }
 
+  async function uploadDraftToTikTok(uploadUrl, chunkSize) {
+    if (!file) throw new Error("VIDEO_MISSING");
+    let offset = 0;
+    draftProgress.classList.remove("hidden");
+    draftProgressBar.style.width = "0%";
+
+    while (offset < file.size) {
+      const remaining = file.size - offset;
+      const normalEnd = Math.min(file.size, offset + chunkSize);
+      let end = normalEnd;
+
+      if (file.size > 64 * 1024 * 1024 && file.size - normalEnd < 5 * 1024 * 1024) {
+        end = file.size;
+      }
+
+      const blob = file.slice(offset, end, file.type);
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type,
+          "Content-Range": "bytes " + offset + "-" + (end - 1) + "/" + file.size
+        },
+        body: blob
+      });
+
+      if (![201,206].includes(response.status)) {
+        throw new Error("TikTok draft upload failed with HTTP " + response.status);
+      }
+
+      offset = end;
+      draftProgressBar.style.width = Math.round((offset / file.size) * 100) + "%";
+    }
+  }
+
+  async function pollDraftStatus(postToken) {
+    for (let attempt = 1; attempt <= 30; attempt += 1) {
+      const data = await api("status", {post_token: postToken});
+      const state = String(data.status || "").toUpperCase();
+
+      if (state === "SEND_TO_USER_INBOX") {
+        statusBox(
+          draftResult,
+          "Draft delivered to TikTok. Open the notification in your TikTok inbox to continue editing and publish.",
+          "good"
+        );
+        return;
+      }
+      if (state === "PUBLISH_COMPLETE") {
+        statusBox(
+          draftResult,
+          "TikTok reports that the uploaded draft has been completed and posted from the TikTok editing flow.",
+          "good"
+        );
+        return;
+      }
+      if (state === "FAILED") {
+        throw new Error("TikTok rejected the draft upload: " + (data.fail_reason || "unknown reason"));
+      }
+
+      statusBox(draftResult, "TikTok draft status: " + (state || "PROCESSING"), "busy");
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+    }
+
+    statusBox(
+      draftResult,
+      "The video upload finished and TikTok is still preparing the inbox draft. Check your TikTok inbox shortly.",
+      "busy"
+    );
+  }
+
   async function pollStatus(postToken) {
     for (let attempt = 1; attempt <= 45; attempt += 1) {
       const data = await api("status", {post_token: postToken});
@@ -535,6 +670,32 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     }
     statusBox(result, "The upload finished and TikTok is still processing it. Check again shortly.", "busy");
   }
+
+  draftUpload.addEventListener("click", async () => {
+    validateDraft();
+    if (draftUpload.disabled || !file) return;
+
+    draftUpload.disabled = true;
+    statusBox(draftResult, "Requesting a TikTok draft upload…", "busy");
+
+    try {
+      const initialized = await api("draft_init", {
+        video_size: file.size,
+        duration_sec: durationSec,
+        rights_confirmation: draftRightsConfirm.checked,
+        draft_consent: draftConsent.checked
+      });
+
+      statusBox(draftResult, "TikTok accepted the draft request. Uploading the selected video…", "busy");
+      await uploadDraftToTikTok(initialized.upload_url, initialized.chunk_size);
+      statusBox(draftResult, "Upload complete. Waiting for TikTok to deliver the draft to your inbox…", "busy");
+      await pollDraftStatus(initialized.post_token);
+    } catch (error) {
+      statusBox(draftResult, error instanceof Error ? error.message : String(error), "bad");
+    } finally {
+      validateDraft();
+    }
+  });
 
   publish.addEventListener("click", async () => {
     validate();
@@ -577,6 +738,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     try {
       const payload = await api("creator");
       renderCreator(payload.creator);
+      validateDraft();
       await loadDisplayData();
     } catch (error) {
       sessionStorage.removeItem(SESSION_KEY);
