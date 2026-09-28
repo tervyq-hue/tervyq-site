@@ -20,7 +20,11 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
 .progress{height:10px;background:#091120;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin-top:12px}.progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .2s}
 .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.actions button{cursor:pointer}.actions button:disabled{opacity:.45;cursor:not-allowed}
 .note{font-size:.9rem;color:#bdc8da}.danger{color:#ff9bb1}.creator-meta{font-size:.9rem;color:var(--muted)}
-@media(max-width:820px){.share-grid{grid-template-columns:1fr}}
+.display-panel{margin-top:18px}.display-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.scope-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.scope-chip{font-size:.78rem;font-weight:800;color:#dfe7f7;border:1px solid #304362;background:#091120;border-radius:999px;padding:5px 9px}
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}.metric{background:#091120;border:1px solid var(--line);border-radius:12px;padding:13px}.metric strong{display:block;font-size:1.25rem;color:#fff}.metric span{font-size:.82rem;color:var(--muted)}
+.video-section-title{margin-top:22px;font-weight:800}.video-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.video-card{overflow:hidden;border:1px solid var(--line);border-radius:13px;background:#091120}.video-card img{width:100%;aspect-ratio:9/16;max-height:220px;object-fit:cover;background:#05070c}.video-card-body{padding:12px}.video-card-title{font-weight:750;color:#fff;line-height:1.35}.video-card-meta{font-size:.78rem;color:var(--muted);margin-top:7px}.video-card a{display:inline-block;margin-top:8px;font-size:.82rem;font-weight:750}
+@media(max-width:820px){.share-grid{grid-template-columns:1fr}.metric-grid{grid-template-columns:repeat(2,1fr)}.video-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -52,6 +56,33 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
 <div><strong id="nickname">TikTok creator</strong><div id="username" class="creator-meta"></div><div id="environment" class="creator-meta"></div></div>
 <div style="margin-left:auto"><button id="disconnect" class="button" type="button">End session</button></div>
 </div>
+
+<section id="displayPanel" class="panel display-panel" aria-labelledby="displayTitle">
+<div class="display-head">
+<div>
+<h2 id="displayTitle">TikTok account & public content</h2>
+<p class="muted" style="margin-bottom:0">Read-only data returned by TikTok for the connected account. This demonstrates the profile statistics and public-video permissions used by TERVYQ.</p>
+<div class="scope-row" aria-label="TikTok read-only permissions">
+<span class="scope-chip">user.info.basic</span>
+<span class="scope-chip">user.info.stats</span>
+<span class="scope-chip">video.list</span>
+</div>
+</div>
+<button id="refreshDisplay" class="button" type="button">Refresh TikTok data</button>
+</div>
+
+<div class="metric-grid" aria-label="TikTok account statistics">
+<div class="metric"><strong id="metricFollowers">—</strong><span>Followers</span></div>
+<div class="metric"><strong id="metricFollowing">—</strong><span>Following</span></div>
+<div class="metric"><strong id="metricLikes">—</strong><span>Total likes</span></div>
+<div class="metric"><strong id="metricVideos">—</strong><span>Public videos</span></div>
+</div>
+
+<div class="video-section-title">Recent public videos</div>
+<div id="videoList" class="video-grid"></div>
+<div id="displayStatus" class="status busy">Loading read-only TikTok data…</div>
+<p class="note">TikTok access tokens remain server-side. Only the account statistics and public-video metadata returned by TikTok are shown here.</p>
+</section>
 
 <div class="share-grid">
 <section class="panel">
@@ -178,6 +209,13 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
   const progress = $("progress");
   const progressBar = $("progressBar");
   const result = $("result");
+  const refreshDisplay = $("refreshDisplay");
+  const displayStatus = $("displayStatus");
+  const videoList = $("videoList");
+  const metricFollowers = $("metricFollowers");
+  const metricFollowing = $("metricFollowing");
+  const metricLikes = $("metricLikes");
+  const metricVideos = $("metricVideos");
 
   function ingestSessionFromHash() {
     const raw = location.hash.startsWith("#") ? location.hash.slice(1) : "";
@@ -256,6 +294,115 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     validate();
   }
 
+  function formatNumber(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? new Intl.NumberFormat().format(n) : "—";
+  }
+
+  function formatVideoDate(unixSeconds) {
+    const n = Number(unixSeconds);
+    if (!Number.isFinite(n) || n <= 0) return "";
+    return new Date(n * 1000).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  }
+
+  function renderDisplay(data) {
+    const account = data.account || {};
+    metricFollowers.textContent = formatNumber(account.follower_count);
+    metricFollowing.textContent = formatNumber(account.following_count);
+    metricLikes.textContent = formatNumber(account.likes_count);
+    metricVideos.textContent = formatNumber(account.video_count);
+
+    videoList.replaceChildren();
+    const videos = Array.isArray(data.videos) ? data.videos : [];
+
+    if (!videos.length) {
+      const empty = document.createElement("div");
+      empty.className = "note";
+      empty.textContent = "TikTok returned no public videos for this authorized account.";
+      videoList.appendChild(empty);
+    } else {
+      videos.forEach((video) => {
+        const card = document.createElement("article");
+        card.className = "video-card";
+
+        if (video.cover_image_url) {
+          const image = document.createElement("img");
+          image.src = video.cover_image_url;
+          image.alt = "";
+          image.loading = "lazy";
+          image.referrerPolicy = "no-referrer";
+          card.appendChild(image);
+        }
+
+        const body = document.createElement("div");
+        body.className = "video-card-body";
+
+        const heading = document.createElement("div");
+        heading.className = "video-card-title";
+        heading.textContent = video.title || video.video_description || "TikTok video";
+        body.appendChild(heading);
+
+        const stats = document.createElement("div");
+        stats.className = "video-card-meta";
+        stats.textContent =
+          formatNumber(video.view_count) + " views · " +
+          formatNumber(video.like_count) + " likes · " +
+          formatNumber(video.comment_count) + " comments · " +
+          formatNumber(video.share_count) + " shares";
+        body.appendChild(stats);
+
+        const date = formatVideoDate(video.create_time);
+        if (date) {
+          const dateNode = document.createElement("div");
+          dateNode.className = "video-card-meta";
+          dateNode.textContent = date + (video.is_aigc ? " · AI-generated label reported by TikTok" : "");
+          body.appendChild(dateNode);
+        }
+
+        if (video.share_url) {
+          const link = document.createElement("a");
+          link.href = video.share_url;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "Open on TikTok";
+          body.appendChild(link);
+        }
+
+        card.appendChild(body);
+        videoList.appendChild(card);
+      });
+    }
+
+    const more = data.has_more ? " TikTok reports that more public videos are available." : "";
+    statusBox(
+      displayStatus,
+      "Read-only TikTok data loaded successfully." + more,
+      "good"
+    );
+  }
+
+  async function loadDisplayData() {
+    refreshDisplay.disabled = true;
+    statusBox(displayStatus, "Loading read-only TikTok data…", "busy");
+    try {
+      const payload = await api("display");
+      renderDisplay(payload);
+    } catch (error) {
+      statusBox(
+        displayStatus,
+        "TikTok account data could not be loaded. Posting remains available independently.\n" +
+          (error instanceof Error ? error.message : String(error)),
+        "bad"
+      );
+    } finally {
+      refreshDisplay.disabled = false;
+    }
+  }
+
   function validate() {
     const errors = [];
     if (!file) errors.push("Select a video file.");
@@ -332,6 +479,8 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     sessionStorage.removeItem(SESSION_KEY);
     location.reload();
   });
+
+  refreshDisplay.addEventListener("click", loadDisplayData);
 
   async function uploadToTikTok(uploadUrl, chunkSize) {
     if (!file) throw new Error("VIDEO_MISSING");
@@ -428,6 +577,7 @@ video{width:100%;max-height:480px;border-radius:14px;background:#000}.status{mar
     try {
       const payload = await api("creator");
       renderCreator(payload.creator);
+      await loadDisplayData();
     } catch (error) {
       sessionStorage.removeItem(SESSION_KEY);
       statusBox(connectPanel, "TikTok session expired or could not be loaded. Please connect again.\n" +
