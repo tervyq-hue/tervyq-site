@@ -77,3 +77,9 @@ footer{border-top:1px solid var(--line);padding:38px 0 46px;color:var(--muted);f
   .navlinks{padding-bottom:10px}
   .site-footer{grid-template-columns:1fr}
 }
+/* Canonical TERVYQ identity — explicit image assets */
+.brand-logo-link{gap:0}
+.brand-logo-img{display:block;width:48px;height:48px;object-fit:contain}
+.hero-wordmark-img{display:block;width:min(100%,523px);height:auto}
+.creator-wordmark-img{display:block;width:min(100%,523px);height:auto}
+.footer-wordmark-img{display:block;width:230px;max-width:100%;height:auto}
