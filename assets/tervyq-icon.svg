@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+<defs><linearGradient id="g" x1="30" y1="22" x2="230" y2="235" gradientUnits="userSpaceOnUse"><stop stop-color="#29d9f1"/><stop offset=".5" stop-color="#7869f1"/><stop offset="1" stop-color="#df42aa"/></linearGradient></defs>
+<rect x="20" y="20" width="216" height="216" rx="48" fill="url(#g)"/>
+<text x="128" y="166" text-anchor="middle" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-size="100" font-weight="900">T</text>
+</svg>
